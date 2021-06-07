@@ -79,7 +79,7 @@
 				<form method="post">
 					<div id="custom-search-input">
 						<div class="input-group">
-							<input type="text" class=" search-query" placeholder="URL" name="main_url">
+							<input type="url" class=" search-query" placeholder="http://www.mywebsite.com" name="main_url" required>
 							<input type="submit" class="btn_search" value="Search">
 						</div>
                         <br><br>
