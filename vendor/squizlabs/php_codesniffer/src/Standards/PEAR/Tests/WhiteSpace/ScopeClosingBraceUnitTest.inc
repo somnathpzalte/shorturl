@@ -24,7 +24,7 @@ class Test2
  }
 
 
-public function test2()
+function test2()
 {
     if ($str{0}) {
         $chr = $str{0}; }
@@ -144,3 +144,11 @@ switch ( $a ) {
 ?>
 <?php $_cartQty = $this->getSummaryCount(); ?>
 <div id="minicart" <?php if ($_cartQty == 0): ?>class="empty"<?php endif; ?>>
+
+<?php
+$match = match ($test) { 1 => 'a', 2 => 'b' };
+
+$match = match ($test) {
+    1 => 'a',
+    2 => 'b'
+    };

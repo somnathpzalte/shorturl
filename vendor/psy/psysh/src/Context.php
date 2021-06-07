@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2018 Justin Hileman
+ * (c) 2012-2020 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -38,7 +38,7 @@ class Context
     /**
      * Get a context variable.
      *
-     * @throws InvalidArgumentException If the variable is not found in the current context
+     * @throws \InvalidArgumentException If the variable is not found in the current context
      *
      * @param string $name
      *
@@ -75,19 +75,19 @@ class Context
             case '__file':
             case '__line':
             case '__dir':
-                if (array_key_exists($name, $this->commandScopeVariables)) {
+                if (\array_key_exists($name, $this->commandScopeVariables)) {
                     return $this->commandScopeVariables[$name];
                 }
                 break;
 
             default:
-                if (array_key_exists($name, $this->scopeVariables)) {
+                if (\array_key_exists($name, $this->scopeVariables)) {
                     return $this->scopeVariables[$name];
                 }
                 break;
         }
 
-        throw new \InvalidArgumentException('Unknown variable: $' . $name);
+        throw new \InvalidArgumentException('Unknown variable: $'.$name);
     }
 
     /**
@@ -97,7 +97,7 @@ class Context
      */
     public function getAll()
     {
-        return array_merge($this->scopeVariables, $this->getSpecialVariables());
+        return \array_merge($this->scopeVariables, $this->getSpecialVariables());
     }
 
     /**
@@ -123,7 +123,7 @@ class Context
             $vars['this'] = $this->boundObject;
         }
 
-        return array_merge($vars, $this->commandScopeVariables);
+        return \array_merge($vars, $this->commandScopeVariables);
     }
 
     /**
@@ -182,7 +182,7 @@ class Context
      *
      * @throws \InvalidArgumentException If no Exception has been caught
      *
-     * @return null|\Exception
+     * @return \Exception|null
      */
     public function getLastException()
     {
@@ -208,7 +208,7 @@ class Context
      *
      * @throws \InvalidArgumentException If no output has happened yet
      *
-     * @return null|string
+     * @return string|null
      */
     public function getLastStdout()
     {
@@ -228,7 +228,7 @@ class Context
      */
     public function setBoundObject($boundObject)
     {
-        $this->boundObject = is_object($boundObject) ? $boundObject : null;
+        $this->boundObject = \is_object($boundObject) ? $boundObject : null;
         $this->boundClass = null;
     }
 
@@ -251,7 +251,7 @@ class Context
      */
     public function setBoundClass($boundClass)
     {
-        $this->boundClass = (is_string($boundClass) && $boundClass !== '') ? $boundClass : null;
+        $this->boundClass = (\is_string($boundClass) && $boundClass !== '') ? $boundClass : null;
         $this->boundObject = null;
     }
 
@@ -275,7 +275,7 @@ class Context
         $vars = [];
         foreach ($commandScopeVariables as $key => $value) {
             // kind of type check
-            if (is_scalar($value) && in_array($key, self::$commandScopeNames)) {
+            if (\is_scalar($value) && \in_array($key, self::$commandScopeNames)) {
                 $vars[$key] = $value;
             }
         }
@@ -303,7 +303,7 @@ class Context
      */
     public function getUnusedCommandScopeVariableNames()
     {
-        return array_diff(self::$commandScopeNames, array_keys($this->commandScopeVariables));
+        return \array_diff(self::$commandScopeNames, \array_keys($this->commandScopeVariables));
     }
 
     /**
@@ -315,6 +315,6 @@ class Context
      */
     public static function isSpecialVariableName($name)
     {
-        return in_array($name, self::$specialNames) || in_array($name, self::$commandScopeNames);
+        return \in_array($name, self::$specialNames) || \in_array($name, self::$commandScopeNames);
     }
 }

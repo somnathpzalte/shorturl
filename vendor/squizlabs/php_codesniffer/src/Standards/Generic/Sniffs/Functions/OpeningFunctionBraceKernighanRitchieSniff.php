@@ -9,13 +9,12 @@
 
 namespace PHP_CodeSniffer\Standards\Generic\Sniffs\Functions;
 
-use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Files\File;
+use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Util\Tokens;
 
 class OpeningFunctionBraceKernighanRitchieSniff implements Sniff
 {
-
 
     /**
      * Should this sniff check function braces?
@@ -115,7 +114,7 @@ class OpeningFunctionBraceKernighanRitchieSniff implements Sniff
                         && $tokens[($openingBrace - 1)]['line'] === $tokens[$openingBrace]['line']
                         && $tokens[($openingBrace - 2)]['line'] < $tokens[$openingBrace]['line']
                     ) {
-                        // Brace is preceeded by indent, so remove it to ensure we don't
+                        // Brace is preceded by indent, so remove it to ensure we don't
                         // leave behind more indent than is required for the first line.
                         $phpcsFile->fixer->replaceToken(($openingBrace - 1), '');
                     }

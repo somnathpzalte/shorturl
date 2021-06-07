@@ -3,17 +3,14 @@ AjglBreakpointTwigExtension
 
 The AjglBreakpointTwigExtension component allows you set breakpoints in twig templates.
 
-[![Build Status](https://travis-ci.org/ajgarlag/AjglBreakpointTwigExtension.png?branch=master)](https://travis-ci.org/ajgarlag/AjglBreakpointTwigExtension)
+[![Build Status](https://github.com/ajgarlag/AjglBreakpointTwigExtension/workflows/tests/badge.svg?branch=master)](https://github.com/ajgarlag/AjglBreakpointTwigExtension/actions)
 [![Latest Stable Version](https://poser.pugx.org/ajgl/breakpoint-twig-extension/v/stable.png)](https://packagist.org/packages/ajgl/breakpoint-twig-extension)
 [![Latest Unstable Version](https://poser.pugx.org/ajgl/breakpoint-twig-extension/v/unstable.png)](https://packagist.org/packages/ajgl/breakpoint-twig-extension)
 [![Total Downloads](https://poser.pugx.org/ajgl/breakpoint-twig-extension/downloads.png)](https://packagist.org/packages/ajgl/breakpoint-twig-extension)
 [![Montly Downloads](https://poser.pugx.org/ajgl/breakpoint-twig-extension/d/monthly.png)](https://packagist.org/packages/ajgl/breakpoint-twig-extension)
 [![Daily Downloads](https://poser.pugx.org/ajgl/breakpoint-twig-extension/d/daily.png)](https://packagist.org/packages/ajgl/breakpoint-twig-extension)
 [![License](https://poser.pugx.org/ajgl/breakpoint-twig-extension/license.png)](https://packagist.org/packages/ajgl/breakpoint-twig-extension)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/ajgarlag/AjglBreakpointTwigExtension/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/ajgarlag/AjglBreakpointTwigExtension/?branch=master)
-[![Code Coverage](https://scrutinizer-ci.com/g/ajgarlag/AjglBreakpointTwigExtension/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/ajgarlag/AjglBreakpointTwigExtension/?branch=master)
 [![SensioLabsInsight](https://insight.sensiolabs.com/projects/e0f1276d-6ded-4a20-9b3f-1a7c77a92015/mini.png)](https://insight.sensiolabs.com/projects/e0f1276d-6ded-4a20-9b3f-1a7c77a92015)
-[![StyleCI](https://styleci.io/repos/53512207/shield)](https://styleci.io/repos/53512207)
 
 This component requires the [Xdebug] PHP extension to be installed.
 
@@ -73,7 +70,12 @@ Symfony Bundle
 --------------
 
 If you want to use this extension in your Symfony application, you can enable the
-Symfony Bundle included in this package:
+Symfony Bundle included in this package.
+
+The bundle will register the twig extension automatically. So, once enabled, you
+can insert the `breakpoint` twig function in your templates.
+
+### Symfony 2/3
 
 ```php
 // app/AppKernel.php
@@ -82,9 +84,16 @@ if (in_array($this->getEnvironment(), array('dev', 'test'), true)) {
 }
 ```
 
-This bundle will register the twig extension automatically. So, once enabled, you
-can insert the `breakpoint` twig function in your templates.
+### Symfony 4/5
 
+```php
+// config/bundles.php
+//...
+return [
+    //...
+    Ajgl\Twig\Extension\SymfonyBundle\AjglBreakpointTwigExtensionBundle::class => ['dev' => true]
+];
+```
 
 License
 -------

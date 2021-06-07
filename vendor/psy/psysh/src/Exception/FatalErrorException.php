@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2018 Justin Hileman
+ * (c) 2012-2020 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -21,12 +21,12 @@ class FatalErrorException extends \ErrorException implements Exception
     /**
      * Create a fatal error.
      *
-     * @param string     $message  (default: "")
-     * @param int        $code     (default: 0)
-     * @param int        $severity (default: 1)
-     * @param string     $filename (default: null)
-     * @param int        $lineno   (default: null)
-     * @param \Exception $previous (default: null)
+     * @param string          $message  (default: "")
+     * @param int             $code     (default: 0)
+     * @param int             $severity (default: 1)
+     * @param string|null     $filename (default: null)
+     * @param int|null        $lineno   (default: null)
+     * @param \Exception|null $previous (default: null)
      */
     public function __construct($message = '', $code = 0, $severity = 1, $filename = null, $lineno = null, $previous = null)
     {
@@ -36,7 +36,7 @@ class FatalErrorException extends \ErrorException implements Exception
         }
 
         $this->rawMessage = $message;
-        $message = sprintf('PHP Fatal error:  %s in %s on line %d', $message, $filename ?: "eval()'d code", $lineno);
+        $message = \sprintf('PHP Fatal error:  %s in %s on line %d', $message, $filename ?: "eval()'d code", $lineno);
         parent::__construct($message, $code, $severity, $filename, $lineno, $previous);
     }
 

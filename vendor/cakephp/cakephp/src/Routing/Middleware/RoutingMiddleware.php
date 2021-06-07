@@ -15,7 +15,6 @@
 namespace Cake\Routing\Middleware;
 
 use Cake\Cache\Cache;
-use Cake\Core\Configure;
 use Cake\Core\PluginApplicationInterface;
 use Cake\Http\BaseApplication;
 use Cake\Http\MiddlewareQueue;
@@ -40,7 +39,7 @@ class RoutingMiddleware
     /**
      * The application that will have its routing hook invoked.
      *
-     * @var \Cake\Http\BaseApplication
+     * @var \Cake\Http\BaseApplication|null
      */
     protected $app;
 
@@ -48,14 +47,14 @@ class RoutingMiddleware
      * The cache configuration name to use for route collection caching,
      * null to disable caching
      *
-     * @var string
+     * @var string|null
      */
     protected $cacheConfig;
 
     /**
      * Constructor
      *
-     * @param \Cake\Http\BaseApplication $app The application instance that routes are defined on.
+     * @param \Cake\Http\BaseApplication|null $app The application instance that routes are defined on.
      * @param string|null $cacheConfig The cache config name to use or null to disable routes cache
      */
     public function __construct(BaseApplication $app = null, $cacheConfig = null)
@@ -125,7 +124,6 @@ class RoutingMiddleware
      * @param \Psr\Http\Message\ResponseInterface $response The response.
      * @param callable $next The next middleware to call.
      * @return \Psr\Http\Message\ResponseInterface A response.
-     * @throws \Cake\Routing\InvalidArgumentException
      */
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response, $next)
     {

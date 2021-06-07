@@ -9,9 +9,8 @@
 
 namespace PHP_CodeSniffer\Standards\Squiz\Sniffs\Scope;
 
-use PHP_CodeSniffer\Sniffs\AbstractVariableSniff;
 use PHP_CodeSniffer\Files\File;
-use PHP_CodeSniffer\Util\Tokens;
+use PHP_CodeSniffer\Sniffs\AbstractVariableSniff;
 
 class MemberVarScopeSniff extends AbstractVariableSniff
 {
@@ -30,7 +29,7 @@ class MemberVarScopeSniff extends AbstractVariableSniff
         $tokens     = $phpcsFile->getTokens();
         $properties = $phpcsFile->getMemberProperties($stackPtr);
 
-        if ($properties['scope_specified'] !== false) {
+        if ($properties === [] || $properties['scope_specified'] !== false) {
             return;
         }
 

@@ -12,13 +12,17 @@
 namespace Ajgl\Twig\Extension\Tests\SymfonyBundle\DependencyInjection;
 
 use Ajgl\Twig\Extension\SymfonyBundle\DependencyInjection\AjglBreakpointTwigExtensionExtension;
+use PHPUnit\Framework\TestCase;
+use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * @author Antonio J. García Lagar <aj@garcialagar.es>
  */
-class AjglBreakpointTwigExtensionExtensionTest extends \PHPUnit_Framework_TestCase
+class AjglBreakpointTwigExtensionExtensionTest extends TestCase
 {
+    use SetUpTearDownTrait;
+
     /**
      * @var ContainerBuilder
      */
@@ -29,7 +33,7 @@ class AjglBreakpointTwigExtensionExtensionTest extends \PHPUnit_Framework_TestCa
      */
     protected $extension;
 
-    protected function setUp()
+    protected function doSetUp()
     {
         $this->container = new ContainerBuilder();
         $this->extension = new AjglBreakpointTwigExtensionExtension();
@@ -37,7 +41,7 @@ class AjglBreakpointTwigExtensionExtensionTest extends \PHPUnit_Framework_TestCa
 
     public function testTwigExtensionsDefinition()
     {
-        $this->extension->load(array(), $this->container);
+        $this->extension->load([], $this->container);
         $this->assertTrue($this->container->hasDefinition('ajgl_twig_extension.breakpoint'));
         $definition = $this->container->getDefinition('ajgl_twig_extension.breakpoint');
         $this->assertSame(

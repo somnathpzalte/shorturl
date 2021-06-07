@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2018 Justin Hileman
+ * (c) 2012-2020 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -24,7 +24,11 @@ class GitHubChecker implements Checker
      */
     public function isLatest()
     {
-        return version_compare(Shell::VERSION, $this->getLatest(), '>=');
+        // version_compare doesn't handle semver completely;
+        // strip pre-release and build metadata before comparing
+        $version = \preg_replace('/[+-]\w+/', '', Shell::VERSION);
+
+        return \version_compare($version, $this->getLatest(), '>=');
     }
 
     /**
@@ -68,22 +72,22 @@ class GitHubChecker implements Checker
      */
     public function fetchLatestRelease()
     {
-        $context = stream_context_create([
+        $context = \stream_context_create([
             'http' => [
-                'user_agent' => 'PsySH/' . Shell::VERSION,
+                'user_agent' => 'PsySH/'.Shell::VERSION,
                 'timeout'    => 3,
             ],
         ]);
 
-        set_error_handler(function () {
+        \set_error_handler(function () {
             // Just ignore all errors with this. The checker will throw an exception
             // if it doesn't work :)
         });
 
-        $result = @file_get_contents(self::URL, false, $context);
+        $result = @\file_get_contents(self::URL, false, $context);
 
-        restore_error_handler();
+        \restore_error_handler();
 
-        return json_decode($result);
+        return \json_decode($result);
     }
 }

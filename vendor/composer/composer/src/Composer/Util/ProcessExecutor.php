@@ -45,12 +45,14 @@ class ProcessExecutor
     {
         if ($this->io && $this->io->isDebug()) {
             $safeCommand = preg_replace_callback('{://(?P<user>[^:/\s]+):(?P<password>[^@\s/]+)@}i', function ($m) {
-                if (preg_match('{^[a-f0-9]{12,}$}', $m['user'])) {
+                // if the username looks like a long (12char+) hex string, or a modern github token (e.g. ghp_xxx) we obfuscate that
+                if (preg_match('{^([a-f0-9]{12,}|gh[a-z]_[a-zA-Z0-9_]+)$}', $m['user'])) {
                     return '://***:***@';
                 }
 
                 return '://'.$m['user'].':***@';
             }, $command);
+            $safeCommand = preg_replace("{--password (.*[^\\\\]\') }", '--password \'***\' ', $safeCommand);
             $this->io->writeError('Executing command ('.($cwd ?: 'CWD').'): '.$safeCommand);
         }
 
@@ -60,9 +62,19 @@ class ProcessExecutor
             $cwd = realpath(getcwd());
         }
 
-        $this->captureOutput = count(func_get_args()) > 1;
+        if (null !== $cwd && !is_dir($cwd)) {
+            throw new \RuntimeException('The given CWD for the process does not exist: '.$cwd);
+        }
+
+        $this->captureOutput = func_num_args() > 1;
         $this->errorOutput = null;
-        $process = new Process($command, $cwd, null, null, static::getTimeout());
+
+        // TODO in v3, commands should be passed in as arrays of cmd + args
+        if (method_exists('Symfony\Component\Process\Process', 'fromShellCommandline')) {
+            $process = Process::fromShellCommandline($command, $cwd, null, null, static::getTimeout());
+        } else {
+            $process = new Process($command, $cwd, null, null, static::getTimeout());
+        }
 
         $callback = is_callable($output) ? $output : array($this, 'outputHandler');
         $process->run($callback);
@@ -105,10 +117,18 @@ class ProcessExecutor
             return;
         }
 
-        if (Process::ERR === $type) {
-            $this->io->writeError($buffer, false);
+        if (method_exists($this->io, 'writeRaw')) {
+            if (Process::ERR === $type) {
+                $this->io->writeErrorRaw($buffer, false);
+            } else {
+                $this->io->writeRaw($buffer, false);
+            }
         } else {
-            $this->io->write($buffer, false);
+            if (Process::ERR === $type) {
+                $this->io->writeError($buffer, false);
+            } else {
+                $this->io->write($buffer, false);
+            }
         }
     }
 
@@ -131,15 +151,11 @@ class ProcessExecutor
      */
     public static function escape($argument)
     {
-        if (method_exists('Symfony\Component\Process\ProcessUtils', 'escapeArgument')) {
-            return ProcessUtils::escapeArgument($argument);
-        }
-
         return self::escapeArgument($argument);
     }
 
     /**
-     * Copy of ProcessUtils::escapeArgument() that is removed in Symfony 4.
+     * Copy of ProcessUtils::escapeArgument() that is deprecated in Symfony 3.3 and removed in Symfony 4.
      *
      * @param string $argument
      *
@@ -152,7 +168,7 @@ class ProcessExecutor
         //@see https://bugs.php.net/bug.php?id=43784
         //@see https://bugs.php.net/bug.php?id=49446
         if ('\\' === DIRECTORY_SEPARATOR) {
-            if ('' === $argument) {
+            if ((string) $argument === '') {
                 return escapeshellarg($argument);
             }
 

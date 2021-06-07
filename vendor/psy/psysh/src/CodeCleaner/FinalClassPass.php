@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2018 Justin Hileman
+ * (c) 2012-2020 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -31,7 +31,7 @@ class FinalClassPass extends CodeCleanerPass
     }
 
     /**
-     * @throws RuntimeException if the node is a class that extends a final class
+     * @throws FatalErrorException if the node is a class that extends a final class
      *
      * @param Node $node
      */
@@ -41,13 +41,13 @@ class FinalClassPass extends CodeCleanerPass
             if ($node->extends) {
                 $extends = (string) $node->extends;
                 if ($this->isFinalClass($extends)) {
-                    $msg = sprintf('Class %s may not inherit from final class (%s)', $node->name, $extends);
-                    throw new FatalErrorException($msg, 0, E_ERROR, null, $node->getLine());
+                    $msg = \sprintf('Class %s may not inherit from final class (%s)', $node->name, $extends);
+                    throw new FatalErrorException($msg, 0, \E_ERROR, null, $node->getLine());
                 }
             }
 
             if ($node->isFinal()) {
-                $this->finalClasses[strtolower($node->name)] = true;
+                $this->finalClasses[\strtolower($node->name)] = true;
             }
         }
     }
@@ -59,8 +59,8 @@ class FinalClassPass extends CodeCleanerPass
      */
     private function isFinalClass($name)
     {
-        if (!class_exists($name)) {
-            return isset($this->finalClasses[strtolower($name)]);
+        if (!\class_exists($name)) {
+            return isset($this->finalClasses[\strtolower($name)]);
         }
 
         $refl = new \ReflectionClass($name);

@@ -9,12 +9,31 @@
 
 namespace PHP_CodeSniffer\Standards\PEAR\Sniffs\Commenting;
 
-use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Files\File;
+use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Util\Tokens;
 
 class FunctionCommentSniff implements Sniff
 {
+
+    /**
+     * Disable the check for functions with a lower visibility than the value given.
+     *
+     * Allowed values are public, protected, and private.
+     *
+     * @var string
+     */
+    public $minimumVisibility = 'private';
+
+    /**
+     * Array of methods which do not require a return type.
+     *
+     * @var array
+     */
+    public $specialMethods = [
+        '__construct',
+        '__destruct',
+    ];
 
 
     /**
@@ -40,17 +59,26 @@ class FunctionCommentSniff implements Sniff
      */
     public function process(File $phpcsFile, $stackPtr)
     {
-        $tokens = $phpcsFile->getTokens();
-        $find   = Tokens::$methodPrefixes;
-        $find[] = T_WHITESPACE;
+        $scopeModifier = $phpcsFile->getMethodProperties($stackPtr)['scope'];
+        if ($scopeModifier === 'protected'
+            && $this->minimumVisibility === 'public'
+            || $scopeModifier === 'private'
+            && ($this->minimumVisibility === 'public' || $this->minimumVisibility === 'protected')
+        ) {
+            return;
+        }
 
-        $commentEnd = $phpcsFile->findPrevious($find, ($stackPtr - 1), null, true);
+        $tokens   = $phpcsFile->getTokens();
+        $ignore   = Tokens::$methodPrefixes;
+        $ignore[] = T_WHITESPACE;
+
+        $commentEnd = $phpcsFile->findPrevious($ignore, ($stackPtr - 1), null, true);
         if ($tokens[$commentEnd]['code'] === T_COMMENT) {
             // Inline comments might just be closing comments for
             // control structures or functions instead of function comments
             // using the wrong comment type. If there is other code on the line,
             // assume they relate to that code.
-            $prev = $phpcsFile->findPrevious($find, ($commentEnd - 1), null, true);
+            $prev = $phpcsFile->findPrevious($ignore, ($commentEnd - 1), null, true);
             if ($prev !== false && $tokens[$prev]['line'] === $tokens[$commentEnd]['line']) {
                 $commentEnd = $prev;
             }
@@ -117,7 +145,7 @@ class FunctionCommentSniff implements Sniff
 
         // Skip constructor and destructor.
         $methodName      = $phpcsFile->getDeclarationName($stackPtr);
-        $isSpecialMethod = ($methodName === '__construct' || $methodName === '__destruct');
+        $isSpecialMethod = in_array($methodName,  $this->specialMethods, true);
 
         $return = null;
         foreach ($tokens[$commentStart]['comment_tags'] as $tag) {
@@ -132,10 +160,6 @@ class FunctionCommentSniff implements Sniff
             }
         }
 
-        if ($isSpecialMethod === true) {
-            return;
-        }
-
         if ($return !== null) {
             $content = $tokens[($return + 2)]['content'];
             if (empty($content) === true || $tokens[($return + 2)]['code'] !== T_DOC_COMMENT_STRING) {
@@ -143,6 +167,10 @@ class FunctionCommentSniff implements Sniff
                 $phpcsFile->addError($error, $return, 'MissingReturnType');
             }
         } else {
+            if ($isSpecialMethod === true) {
+                return;
+            }
+
             $error = 'Missing @return tag in function comment';
             $phpcsFile->addError($error, $tokens[$commentStart]['comment_closer'], 'MissingReturn');
         }//end if
@@ -217,7 +245,7 @@ class FunctionCommentSniff implements Sniff
 
             if ($tokens[($tag + 2)]['code'] === T_DOC_COMMENT_STRING) {
                 $matches = [];
-                preg_match('/([^$&.]+)(?:((?:\.\.\.)?(?:\$|&)[^\s]+)(?:(\s+)(.*))?)?/', $tokens[($tag + 2)]['content'], $matches);
+                preg_match('/((?:(?![$.]|&(?=\$)).)*)(?:((?:\.\.\.)?(?:\$|&)[^\s]+)(?:(\s+)(.*))?)?/', $tokens[($tag + 2)]['content'], $matches);
 
                 if (empty($matches) === false) {
                     $typeLen   = strlen($matches[1]);
@@ -297,43 +325,45 @@ class FunctionCommentSniff implements Sniff
 
             $foundParams[] = $param['var'];
 
-            // Check number of spaces after the type.
-            $spaces = ($maxType - strlen($param['type']) + 1);
-            if ($param['type_space'] !== $spaces) {
-                $error = 'Expected %s spaces after parameter type; %s found';
-                $data  = [
-                    $spaces,
-                    $param['type_space'],
-                ];
+            if (trim($param['type']) !== '') {
+                // Check number of spaces after the type.
+                $spaces = ($maxType - strlen($param['type']) + 1);
+                if ($param['type_space'] !== $spaces) {
+                    $error = 'Expected %s spaces after parameter type; %s found';
+                    $data  = [
+                        $spaces,
+                        $param['type_space'],
+                    ];
 
-                $fix = $phpcsFile->addFixableError($error, $param['tag'], 'SpacingAfterParamType', $data);
-                if ($fix === true) {
-                    $commentToken = ($param['tag'] + 2);
+                    $fix = $phpcsFile->addFixableError($error, $param['tag'], 'SpacingAfterParamType', $data);
+                    if ($fix === true) {
+                        $commentToken = ($param['tag'] + 2);
 
-                    $content  = $param['type'];
-                    $content .= str_repeat(' ', $spaces);
-                    $content .= $param['var'];
-                    $content .= str_repeat(' ', $param['var_space']);
+                        $content  = $param['type'];
+                        $content .= str_repeat(' ', $spaces);
+                        $content .= $param['var'];
+                        $content .= str_repeat(' ', $param['var_space']);
 
-                    $wrapLength = ($tokens[$commentToken]['length'] - $param['type_space'] - $param['var_space'] - strlen($param['type']) - strlen($param['var']));
+                        $wrapLength = ($tokens[$commentToken]['length'] - $param['type_space'] - $param['var_space'] - strlen($param['type']) - strlen($param['var']));
 
-                    $star        = $phpcsFile->findPrevious(T_DOC_COMMENT_STAR, $param['tag']);
-                    $spaceLength = (strlen($content) + $tokens[($commentToken - 1)]['length'] + $tokens[($commentToken - 2)]['length']);
+                        $star        = $phpcsFile->findPrevious(T_DOC_COMMENT_STAR, $param['tag']);
+                        $spaceLength = (strlen($content) + $tokens[($commentToken - 1)]['length'] + $tokens[($commentToken - 2)]['length']);
 
-                    $padding  = str_repeat(' ', ($tokens[$star]['column'] - 1));
-                    $padding .= '* ';
-                    $padding .= str_repeat(' ', $spaceLength);
+                        $padding  = str_repeat(' ', ($tokens[$star]['column'] - 1));
+                        $padding .= '* ';
+                        $padding .= str_repeat(' ', $spaceLength);
 
-                    $content .= wordwrap(
-                        $param['comment'],
-                        $wrapLength,
-                        $phpcsFile->eolChar.$padding
-                    );
+                        $content .= wordwrap(
+                            $param['comment'],
+                            $wrapLength,
+                            $phpcsFile->eolChar.$padding
+                        );
 
-                    $phpcsFile->fixer->replaceToken($commentToken, $content);
-                    for ($i = ($commentToken + 1); $i <= $param['comment_end']; $i++) {
-                        $phpcsFile->fixer->replaceToken($i, '');
-                    }
+                        $phpcsFile->fixer->replaceToken($commentToken, $content);
+                        for ($i = ($commentToken + 1); $i <= $param['comment_end']; $i++) {
+                            $phpcsFile->fixer->replaceToken($i, '');
+                        }
+                    }//end if
                 }//end if
             }//end if
 

@@ -9,8 +9,8 @@
 
 namespace PHP_CodeSniffer\Standards\PSR1\Sniffs\Files;
 
-use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Files\File;
+use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Util\Tokens;
 
 class SideEffectsSniff implements Sniff
@@ -138,6 +138,11 @@ class SideEffectsSniff implements Sniff
                 continue;
             }
 
+            // Ignore logical operators.
+            if (isset(Tokens::$booleanOperators[$tokens[$i]['code']]) === true) {
+                continue;
+            }
+
             // Ignore entire namespace, declare, const and use statements.
             if ($tokens[$i]['code'] === T_NAMESPACE
                 || $tokens[$i]['code'] === T_USE
@@ -146,6 +151,12 @@ class SideEffectsSniff implements Sniff
             ) {
                 if (isset($tokens[$i]['scope_opener']) === true) {
                     $i = $tokens[$i]['scope_closer'];
+                    if ($tokens[$i]['code'] === T_ENDDECLARE) {
+                        $semicolon = $phpcsFile->findNext(Tokens::$emptyTokens, ($i + 1), null, true);
+                        if ($semicolon !== false && $tokens[$semicolon]['code'] === T_SEMICOLON) {
+                            $i = $semicolon;
+                        }
+                    }
                 } else {
                     $semicolon = $phpcsFile->findNext(T_SEMICOLON, ($i + 1));
                     if ($semicolon !== false) {
@@ -167,6 +178,14 @@ class SideEffectsSniff implements Sniff
                 continue;
             }
 
+            // Ignore attributes.
+            if ($tokens[$i]['code'] === T_ATTRIBUTE
+                && isset($tokens[$i]['attribute_closer']) === true
+            ) {
+                $i = $tokens[$i]['attribute_closer'];
+                continue;
+            }
+
             // Detect and skip over symbols.
             if (isset($symbols[$tokens[$i]['code']]) === true
                 && isset($tokens[$i]['scope_closer']) === true
@@ -180,9 +199,11 @@ class SideEffectsSniff implements Sniff
             } else if ($tokens[$i]['code'] === T_STRING
                 && strtolower($tokens[$i]['content']) === 'define'
             ) {
-                $prev = $phpcsFile->findPrevious(T_WHITESPACE, ($i - 1), null, true);
+                $prev = $phpcsFile->findPrevious(Tokens::$emptyTokens, ($i - 1), null, true);
                 if ($tokens[$prev]['code'] !== T_OBJECT_OPERATOR
+                    && $tokens[$prev]['code'] !== T_NULLSAFE_OBJECT_OPERATOR
                     && $tokens[$prev]['code'] !== T_DOUBLE_COLON
+                    && $tokens[$prev]['code'] !== T_FUNCTION
                 ) {
                     if ($firstSymbol === null) {
                         $firstSymbol = $i;
@@ -194,6 +215,29 @@ class SideEffectsSniff implements Sniff
                     }
 
                     continue;
+                }
+            }//end if
+
+            // Special case for defined() as it can be used to see
+            // if a constant (a symbol) should be defined or not and
+            // doesn't need to use a full conditional block.
+            if ($tokens[$i]['code'] === T_STRING
+                && strtolower($tokens[$i]['content']) === 'defined'
+            ) {
+                $openBracket = $phpcsFile->findNext(Tokens::$emptyTokens, ($i + 1), null, true);
+                if ($openBracket !== false
+                    && $tokens[$openBracket]['code'] === T_OPEN_PARENTHESIS
+                    && isset($tokens[$openBracket]['parenthesis_closer']) === true
+                ) {
+                    $prev = $phpcsFile->findPrevious(Tokens::$emptyTokens, ($i - 1), null, true);
+                    if ($tokens[$prev]['code'] !== T_OBJECT_OPERATOR
+                        && $tokens[$prev]['code'] !== T_NULLSAFE_OBJECT_OPERATOR
+                        && $tokens[$prev]['code'] !== T_DOUBLE_COLON
+                        && $tokens[$prev]['code'] !== T_FUNCTION
+                    ) {
+                        $i = $tokens[$openBracket]['parenthesis_closer'];
+                        continue;
+                    }
                 }
             }//end if
 

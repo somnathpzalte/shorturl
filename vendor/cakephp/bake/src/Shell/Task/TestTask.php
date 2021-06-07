@@ -103,6 +103,7 @@ class TestTask extends BakeTask
     {
         parent::main();
         $type = $this->normalize($type);
+        $name = $this->_getName($name);
 
         if (empty($type) && empty($name)) {
             $this->outputTypeChoices();
@@ -541,10 +542,8 @@ class TestTask extends BakeTask
             $construct = "new {$className}(\$this->io);";
         }
         if ($type === 'Task') {
-            $pre = "\$this->io = \$this->getMockBuilder('Cake\Console\ConsoleIo')->getMock();\n";
-            $construct = "\$this->getMockBuilder('{$fullClassName}')\n";
-            $construct .= "            ->setConstructorArgs([\$this->io])\n";
-            $construct .= "            ->getMock();";
+            $pre = "\$this->io = \$this->getMockBuilder('Cake\Console\ConsoleIo')->getMock();";
+            $construct = "new {$className}(\$this->io);";
         }
         if ($type === 'Cell') {
             $pre = "\$this->request = \$this->getMockBuilder('Cake\Http\ServerRequest')->getMock();\n";

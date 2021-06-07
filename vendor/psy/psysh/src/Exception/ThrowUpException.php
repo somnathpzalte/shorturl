@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2018 Justin Hileman
+ * (c) 2012-2020 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -21,7 +21,7 @@ class ThrowUpException extends \Exception implements Exception
      */
     public function __construct(\Exception $exception)
     {
-        $message = sprintf("Throwing %s with message '%s'", get_class($exception), $exception->getMessage());
+        $message = \sprintf("Throwing %s with message '%s'", \get_class($exception), $exception->getMessage());
         parent::__construct($message, $exception->getCode(), $exception);
     }
 

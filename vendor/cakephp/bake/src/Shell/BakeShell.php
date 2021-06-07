@@ -56,6 +56,7 @@ class BakeShell extends Shell
         parent::startup();
         Configure::write('debug', true);
         Cache::disable();
+        // Loading WyriHaximus/TwigView Plugin through the Plugin::load() for backward compatibility.
         if (!Plugin::loaded('WyriHaximus/TwigView')) {
             Plugin::load('WyriHaximus/TwigView', ['bootstrap' => true]);
         }
@@ -238,6 +239,12 @@ class BakeShell extends Shell
      */
     public function all($name = null)
     {
+        if ($this->param('connection') && $this->param('everything') &&
+            $this->param('connection') !== 'default') {
+            $this->warn('Can only bake everything on default connection');
+
+            return false;
+        }
         $this->out('Bake All');
         $this->hr();
 

@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2018 Justin Hileman
+ * (c) 2012-2020 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -16,7 +16,6 @@ use PhpParser\PrettyPrinter\Standard as Printer;
 use Psy\Command\TimeitCommand\TimeitVisitor;
 use Psy\Input\CodeArgument;
 use Psy\ParserFactory;
-use Psy\Shell;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -26,7 +25,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class TimeitCommand extends Command
 {
-    const RESULT_MSG     = '<info>Command took %.6f seconds to complete.</info>';
+    const RESULT_MSG = '<info>Command took %.6f seconds to complete.</info>';
     const AVG_RESULT_MSG = '<info>Command took %.6f seconds on average (%.6f median; %.6f total) to complete.</info>';
 
     private static $start = null;
@@ -99,14 +98,16 @@ HELP
         self::$times = [];
 
         if ($num === 1) {
-            $output->writeln(sprintf(self::RESULT_MSG, $times[0]));
+            $output->writeln(\sprintf(self::RESULT_MSG, $times[0]));
         } else {
-            $total = array_sum($times);
-            rsort($times);
-            $median = $times[round($num / 2)];
+            $total = \array_sum($times);
+            \rsort($times);
+            $median = $times[\round($num / 2)];
 
-            $output->writeln(sprintf(self::AVG_RESULT_MSG, $total / $num, $median, $total));
+            $output->writeln(\sprintf(self::AVG_RESULT_MSG, $total / $num, $median, $total));
         }
+
+        return 0;
     }
 
     /**
@@ -118,7 +119,7 @@ HELP
      */
     public static function markStart()
     {
-        self::$start = microtime(true);
+        self::$start = \microtime(true);
     }
 
     /**
@@ -137,7 +138,7 @@ HELP
      */
     public static function markEnd($ret = null)
     {
-        self::$times[] = microtime(true) - self::$start;
+        self::$times[] = \microtime(true) - self::$start;
         self::$start = null;
 
         return $ret;
@@ -180,17 +181,17 @@ HELP
      */
     private function parse($code)
     {
-        $code = '<?php ' . $code;
+        $code = '<?php '.$code;
 
         try {
             return $this->parser->parse($code);
         } catch (\PhpParser\Error $e) {
-            if (strpos($e->getMessage(), 'unexpected EOF') === false) {
+            if (\strpos($e->getMessage(), 'unexpected EOF') === false) {
                 throw $e;
             }
 
             // If we got an unexpected EOF, let's try it again with a semicolon.
-            return $this->parser->parse($code . ';');
+            return $this->parser->parse($code.';');
         }
     }
 }

@@ -36,8 +36,11 @@ class DumpAutoloadCommand extends BaseCommand
                 new InputOption('apcu', null, InputOption::VALUE_NONE, 'Use APCu to cache found/not-found classes.'),
                 new InputOption('no-dev', null, InputOption::VALUE_NONE, 'Disables autoload-dev rules.'),
             ))
-            ->setHelp(<<<EOT
+            ->setHelp(
+                <<<EOT
 <info>php composer.phar dump-autoload</info>
+
+Read more at https://getcomposer.org/doc/03-cli.md#dump-autoload-dumpautoload-
 EOT
             )
         ;
@@ -60,11 +63,11 @@ EOT
         $apcu = $input->getOption('apcu') || $config->get('apcu-autoloader');
 
         if ($authoritative) {
-            $this->getIO()->writeError('<info>Generating optimized autoload files (authoritative)</info>');
+            $this->getIO()->write('<info>Generating optimized autoload files (authoritative)</info>');
         } elseif ($optimize) {
-            $this->getIO()->writeError('<info>Generating optimized autoload files</info>');
+            $this->getIO()->write('<info>Generating optimized autoload files</info>');
         } else {
-            $this->getIO()->writeError('<info>Generating autoload files</info>');
+            $this->getIO()->write('<info>Generating autoload files</info>');
         }
 
         $generator = $composer->getAutoloadGenerator();
@@ -72,6 +75,16 @@ EOT
         $generator->setClassMapAuthoritative($authoritative);
         $generator->setApcu($apcu);
         $generator->setRunScripts(!$input->getOption('no-scripts'));
-        $generator->dump($config, $localRepo, $package, $installationManager, 'composer', $optimize);
+        $numberOfClasses = $generator->dump($config, $localRepo, $package, $installationManager, 'composer', $optimize);
+
+        if ($authoritative) {
+            $this->getIO()->write('<info>Generated optimized autoload files (authoritative) containing '. $numberOfClasses .' classes</info>');
+        } elseif ($optimize) {
+            $this->getIO()->write('<info>Generated optimized autoload files containing '. $numberOfClasses .' classes</info>');
+        } else {
+            $this->getIO()->write('<info>Generated autoload files</info>');
+        }
+
+        return 0;
     }
 }

@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2018 Justin Hileman
+ * (c) 2012-2020 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -62,24 +62,24 @@ class LoopContextPass extends CodeCleanerPass
                 $operator = $node instanceof Break_ ? 'break' : 'continue';
 
                 if ($this->loopDepth === 0) {
-                    $msg = sprintf("'%s' not in the 'loop' or 'switch' context", $operator);
-                    throw new FatalErrorException($msg, 0, E_ERROR, null, $node->getLine());
+                    $msg = \sprintf("'%s' not in the 'loop' or 'switch' context", $operator);
+                    throw new FatalErrorException($msg, 0, \E_ERROR, null, $node->getLine());
                 }
 
                 if ($node->num instanceof LNumber || $node->num instanceof DNumber) {
                     $num = $node->num->value;
                     if ($node->num instanceof DNumber || $num < 1) {
-                        $msg = sprintf("'%s' operator accepts only positive numbers", $operator);
-                        throw new FatalErrorException($msg, 0, E_ERROR, null, $node->getLine());
+                        $msg = \sprintf("'%s' operator accepts only positive numbers", $operator);
+                        throw new FatalErrorException($msg, 0, \E_ERROR, null, $node->getLine());
                     }
 
                     if ($num > $this->loopDepth) {
-                        $msg = sprintf("Cannot '%s' %d levels", $operator, $num);
-                        throw new FatalErrorException($msg, 0, E_ERROR, null, $node->getLine());
+                        $msg = \sprintf("Cannot '%s' %d levels", $operator, $num);
+                        throw new FatalErrorException($msg, 0, \E_ERROR, null, $node->getLine());
                     }
                 } elseif ($node->num) {
-                    $msg = sprintf("'%s' operator with non-constant operand is no longer supported", $operator);
-                    throw new FatalErrorException($msg, 0, E_ERROR, null, $node->getLine());
+                    $msg = \sprintf("'%s' operator with non-constant operand is no longer supported", $operator);
+                    throw new FatalErrorException($msg, 0, \E_ERROR, null, $node->getLine());
                 }
                 break;
         }

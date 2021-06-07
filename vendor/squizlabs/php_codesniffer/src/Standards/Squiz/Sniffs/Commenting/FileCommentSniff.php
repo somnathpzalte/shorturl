@@ -9,8 +9,8 @@
 
 namespace PHP_CodeSniffer\Standards\Squiz\Sniffs\Commenting;
 
-use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Files\File;
+use PHP_CodeSniffer\Sniffs\Sniff;
 
 class FileCommentSniff implements Sniff
 {
@@ -72,12 +72,24 @@ class FileCommentSniff implements Sniff
 
         $commentEnd = $tokens[$commentStart]['comment_closer'];
 
-        $nextToken = $phpcsFile->findNext(
-            T_WHITESPACE,
-            ($commentEnd + 1),
-            null,
-            true
-        );
+        for ($nextToken = ($commentEnd + 1); $nextToken < $phpcsFile->numTokens; $nextToken++) {
+            if ($tokens[$nextToken]['code'] === T_WHITESPACE) {
+                continue;
+            }
+
+            if ($tokens[$nextToken]['code'] === T_ATTRIBUTE
+                && isset($tokens[$nextToken]['attribute_closer']) === true
+            ) {
+                $nextToken = $tokens[$nextToken]['attribute_closer'];
+                continue;
+            }
+
+            break;
+        }
+
+        if ($nextToken === $phpcsFile->numTokens) {
+            $nextToken--;
+        }
 
         $ignore = [
             T_CLASS,
@@ -99,7 +111,7 @@ class FileCommentSniff implements Sniff
             T_REQUIRE_ONCE,
         ];
 
-        if (in_array($tokens[$nextToken]['code'], $ignore) === true) {
+        if (in_array($tokens[$nextToken]['code'], $ignore, true) === true) {
             $phpcsFile->addError('Missing file doc comment', $stackPtr, 'Missing');
             $phpcsFile->recordMetric($stackPtr, 'File has doc comment', 'no');
             return ($phpcsFile->numTokens + 1);
@@ -133,7 +145,7 @@ class FileCommentSniff implements Sniff
             $name       = $tokens[$tag]['content'];
             $isRequired = isset($required[$name]);
 
-            if ($isRequired === true && in_array($name, $foundTags) === true) {
+            if ($isRequired === true && in_array($name, $foundTags, true) === true) {
                 $error = 'Only one %s tag is allowed in a file comment';
                 $data  = [$name];
                 $phpcsFile->addError($error, $tag, 'Duplicate'.ucfirst(substr($name, 1)).'Tag', $data);
@@ -183,7 +195,7 @@ class FileCommentSniff implements Sniff
         // Check if the tags are in the correct position.
         $pos = 0;
         foreach ($required as $tag => $true) {
-            if (in_array($tag, $foundTags) === false) {
+            if (in_array($tag, $foundTags, true) === false) {
                 $error = 'Missing %s tag in file comment';
                 $data  = [$tag];
                 $phpcsFile->addError($error, $commentEnd, 'Missing'.ucfirst(substr($tag, 1)).'Tag', $data);

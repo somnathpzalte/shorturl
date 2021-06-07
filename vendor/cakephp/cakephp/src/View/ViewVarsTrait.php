@@ -29,7 +29,7 @@ trait ViewVarsTrait
     /**
      * The name of default View class.
      *
-     * @var string
+     * @var string|null
      * @deprecated 3.1.0 Use `$this->viewBuilder()->getClassName()`/`$this->viewBuilder()->setClassName()` instead.
      */
     public $viewClass;
@@ -74,7 +74,7 @@ trait ViewVarsTrait
         $builder = $this->viewBuilder();
         if ($viewClass === null && $builder->getClassName() === null) {
             $builder->setClassName($this->viewClass);
-            unset($this->viewClass);
+            $this->viewClass = null;
         }
         if ($viewClass) {
             $builder->setClassName($viewClass);

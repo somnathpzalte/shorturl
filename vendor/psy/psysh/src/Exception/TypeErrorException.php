@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2018 Justin Hileman
+ * (c) 2012-2020 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -27,8 +27,8 @@ class TypeErrorException extends \Exception implements Exception
     public function __construct($message = '', $code = 0)
     {
         $this->rawMessage = $message;
-        $message = preg_replace('/, called in .*?: eval\\(\\)\'d code/', '', $message);
-        parent::__construct(sprintf('TypeError: %s', $message), $code);
+        $message = \preg_replace('/, called in .*?: eval\\(\\)\'d code/', '', $message);
+        parent::__construct(\sprintf('TypeError: %s', $message), $code);
     }
 
     /**

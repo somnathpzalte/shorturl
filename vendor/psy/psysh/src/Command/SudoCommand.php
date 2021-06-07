@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2018 Justin Hileman
+ * (c) 2012-2020 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -103,14 +103,14 @@ HELP
         // special case for !!
         if ($code === '!!') {
             $history = $this->readline->listHistory();
-            if (count($history) < 2) {
+            if (\count($history) < 2) {
                 throw new \InvalidArgumentException('No previous command to replay');
             }
-            $code = $history[count($history) - 2];
+            $code = $history[\count($history) - 2];
         }
 
-        if (strpos('<?', $code) === false) {
-            $code = '<?php ' . $code;
+        if (\strpos($code, '<?') === false) {
+            $code = '<?php '.$code;
         }
 
         $nodes = $this->traverser->traverse($this->parse($code));
@@ -118,6 +118,8 @@ HELP
         $sudoCode = $this->printer->prettyPrint($nodes);
         $shell = $this->getApplication();
         $shell->addCode($sudoCode, !$shell->hasCode());
+
+        return 0;
     }
 
     /**
@@ -132,12 +134,12 @@ HELP
         try {
             return $this->parser->parse($code);
         } catch (\PhpParser\Error $e) {
-            if (strpos($e->getMessage(), 'unexpected EOF') === false) {
+            if (\strpos($e->getMessage(), 'unexpected EOF') === false) {
                 throw $e;
             }
 
             // If we got an unexpected EOF, let's try it again with a semicolon.
-            return $this->parser->parse($code . ';');
+            return $this->parser->parse($code.';');
         }
     }
 }

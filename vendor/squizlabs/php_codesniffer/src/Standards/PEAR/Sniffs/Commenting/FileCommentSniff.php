@@ -9,8 +9,8 @@
 
 namespace PHP_CodeSniffer\Standards\PEAR\Sniffs\Commenting;
 
-use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Files\File;
+use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Util\Common;
 
 class FileCommentSniff implements Sniff
@@ -138,12 +138,24 @@ class FileCommentSniff implements Sniff
 
         $commentEnd = $tokens[$commentStart]['comment_closer'];
 
-        $nextToken = $phpcsFile->findNext(
-            T_WHITESPACE,
-            ($commentEnd + 1),
-            null,
-            true
-        );
+        for ($nextToken = ($commentEnd + 1); $nextToken < $phpcsFile->numTokens; $nextToken++) {
+            if ($tokens[$nextToken]['code'] === T_WHITESPACE) {
+                continue;
+            }
+
+            if ($tokens[$nextToken]['code'] === T_ATTRIBUTE
+                && isset($tokens[$nextToken]['attribute_closer']) === true
+            ) {
+                $nextToken = $tokens[$nextToken]['attribute_closer'];
+                continue;
+            }
+
+            break;
+        }
+
+        if ($nextToken === $phpcsFile->numTokens) {
+            $nextToken--;
+        }
 
         $ignore = [
             T_CLASS,
@@ -161,7 +173,7 @@ class FileCommentSniff implements Sniff
             T_PROPERTY,
         ];
 
-        if (in_array($tokens[$nextToken]['code'], $ignore) === true) {
+        if (in_array($tokens[$nextToken]['code'], $ignore, true) === true) {
             $phpcsFile->addError('Missing file doc comment', $stackPtr, 'Missing');
             $phpcsFile->recordMetric($stackPtr, 'File has doc comment', 'no');
             return ($phpcsFile->numTokens + 1);
@@ -370,10 +382,10 @@ class FileCommentSniff implements Sniff
             } else {
                 $nameBits = explode('_', $newContent);
                 $firstBit = array_shift($nameBits);
-                $newName  = strtoupper($firstBit{0}).substr($firstBit, 1).'_';
+                $newName  = strtoupper($firstBit[0]).substr($firstBit, 1).'_';
                 foreach ($nameBits as $bit) {
                     if ($bit !== '') {
-                        $newName .= strtoupper($bit{0}).substr($bit, 1).'_';
+                        $newName .= strtoupper($bit[0]).substr($bit, 1).'_';
                     }
                 }
 
@@ -415,10 +427,10 @@ class FileCommentSniff implements Sniff
             $newContent = str_replace(' ', '_', $content);
             $nameBits   = explode('_', $newContent);
             $firstBit   = array_shift($nameBits);
-            $newName    = strtoupper($firstBit{0}).substr($firstBit, 1).'_';
+            $newName    = strtoupper($firstBit[0]).substr($firstBit, 1).'_';
             foreach ($nameBits as $bit) {
                 if ($bit !== '') {
-                    $newName .= strtoupper($bit{0}).substr($bit, 1).'_';
+                    $newName .= strtoupper($bit[0]).substr($bit, 1).'_';
                 }
             }
 
@@ -455,7 +467,7 @@ class FileCommentSniff implements Sniff
             $local   = '\da-zA-Z-_+';
             // Dot character cannot be the first or last character in the local-part.
             $localMiddle = $local.'.\w';
-            if (preg_match('/^([^<]*)\s+<(['.$local.'](['.$localMiddle.']*['.$local.'])*@[\da-zA-Z][-.\w]*[\da-zA-Z]\.[a-zA-Z]{2,7})>$/', $content) === 0) {
+            if (preg_match('/^([^<]*)\s+<(['.$local.'](['.$localMiddle.']*['.$local.'])*@[\da-zA-Z][-.\w]*[\da-zA-Z]\.[a-zA-Z]{2,})>$/', $content) === 0) {
                 $error = 'Content of the @author tag must be in the form "Display Name <username@example.com>"';
                 $phpcsFile->addError($error, $tag, 'InvalidAuthors');
             }

@@ -9,8 +9,8 @@
 
 namespace PHP_CodeSniffer\Standards\Generic\Sniffs\Functions;
 
-use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Files\File;
+use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Util\Tokens;
 
 class OpeningFunctionBraceBsdAllmanSniff implements Sniff
@@ -34,7 +34,7 @@ class OpeningFunctionBraceBsdAllmanSniff implements Sniff
     /**
      * Registers the tokens that this sniff wants to listen for.
      *
-     * @return void
+     * @return int[]
      */
     public function register()
     {

@@ -21,7 +21,7 @@
         "ajgl/breakpoint-twig-extension": "^0.3.0",
         "aptoma/twig-markdown": "^2.0",
         "asm89/twig-cache-extension": "^1.0",
-        "cakephp/cakephp": "^3.5",
+        "cakephp/cakephp": "^3.6",
         "jasny/twig-extensions": "^1.0",
         "twig/twig": "^1.27",
         "umpirsky/twig-php-function": "0.1"
@@ -29,9 +29,9 @@
     "require-dev": {
         "cakephp/bake": "^1.5",
         "cakephp/debug_kit": "^3.0",
-        "phake/phake": "^1.0.4",
+        "phake/phake": "^2.3.2",
         "phpunit/phpunit": "^5.7.14",
-        "squizlabs/php_codesniffer": "^1.5.6",
+        "squizlabs/php_codesniffer": "^3.4.0",
         "wyrihaximus/phpunit-class-reflection-helpers": "dev-master"
     },
     "autoload": {

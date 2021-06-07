@@ -65,10 +65,13 @@ class ArrayLoader implements LoaderInterface
         }
 
         if (isset($config['bin'])) {
-            foreach ((array) $config['bin'] as $key => $bin) {
+            if (!\is_array($config['bin'])) {
+                $config['bin'] = array($config['bin']);
+            }
+            foreach ($config['bin'] as $key => $bin) {
                 $config['bin'][$key] = ltrim($bin, '/');
             }
-            $package->setBinaries((array) $config['bin']);
+            $package->setBinaries($config['bin']);
         }
 
         if (isset($config['installation-source'])) {
@@ -85,7 +88,7 @@ class ArrayLoader implements LoaderInterface
             }
             $package->setSourceType($config['source']['type']);
             $package->setSourceUrl($config['source']['url']);
-            $package->setSourceReference($config['source']['reference']);
+            $package->setSourceReference(isset($config['source']['reference']) ? $config['source']['reference'] : null);
             if (isset($config['source']['mirrors'])) {
                 $package->setSourceMirrors($config['source']['mirrors']);
             }
@@ -196,6 +199,10 @@ class ArrayLoader implements LoaderInterface
 
             if (isset($config['support'])) {
                 $package->setSupport($config['support']);
+            }
+
+            if (!empty($config['funding']) && is_array($config['funding'])) {
+                $package->setFunding($config['funding']);
             }
 
             if (isset($config['abandoned'])) {

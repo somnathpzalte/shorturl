@@ -3,15 +3,13 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2018 Justin Hileman
+ * (c) 2012-2020 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
 namespace Psy\VersionUpdater;
-
-use Psy\Shell;
 
 class IntervalChecker extends GitHubChecker
 {
@@ -21,13 +19,13 @@ class IntervalChecker extends GitHubChecker
     public function __construct($cacheFile, $interval)
     {
         $this->cacheFile = $cacheFile;
-        $this->interval  = $interval;
+        $this->interval = $interval;
     }
 
     public function fetchLatestRelease()
     {
         // Read the cached file
-        $cached = json_decode(@file_get_contents($this->cacheFile, false));
+        $cached = \json_decode(@\file_get_contents($this->cacheFile, false));
         if ($cached && isset($cached->last_check) && isset($cached->release)) {
             $now = new \DateTime();
             $lastCheck = new \DateTime($cached->last_check);
@@ -60,10 +58,10 @@ class IntervalChecker extends GitHubChecker
     private function updateCache($release)
     {
         $data = [
-            'last_check' => date(DATE_ATOM),
+            'last_check' => \date(\DATE_ATOM),
             'release'    => $release,
         ];
 
-        file_put_contents($this->cacheFile, json_encode($data));
+        \file_put_contents($this->cacheFile, \json_encode($data));
     }
 }

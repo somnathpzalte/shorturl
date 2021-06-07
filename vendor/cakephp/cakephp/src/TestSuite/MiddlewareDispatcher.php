@@ -55,6 +55,13 @@ class MiddlewareDispatcher
     protected $_constructorArgs;
 
     /**
+     * Allow router reloading to be disabled.
+     *
+     * @var bool
+     */
+    protected $_disableRouterReload = false;
+
+    /**
      * The application that is being dispatched.
      *
      * @var \Cake\Core\HttpApplicationInterface
@@ -68,16 +75,21 @@ class MiddlewareDispatcher
      * @param string|null $class The application class name. Defaults to App\Application.
      * @param array|null $constructorArgs The constructor arguments for your application class.
      *   Defaults to `['./config']`
+     * @param bool $disableRouterReload Disable Router::reload() call.
+     * @throws \LogicException If it cannot load class for use in integration testing.
      */
-    public function __construct($test, $class = null, $constructorArgs = null)
+    public function __construct($test, $class = null, $constructorArgs = null, $disableRouterReload = false)
     {
         $this->_test = $test;
         $this->_class = $class ?: Configure::read('App.namespace') . '\Application';
         $this->_constructorArgs = $constructorArgs ?: [CONFIG];
+        $this->_disableRouterReload = $disableRouterReload;
 
         try {
             $reflect = new ReflectionClass($this->_class);
-            $this->app = $reflect->newInstanceArgs($this->_constructorArgs);
+            /** @var \Cake\Core\HttpApplicationInterface $app */
+            $app = $reflect->newInstanceArgs($this->_constructorArgs);
+            $this->app = $app;
         } catch (ReflectionException $e) {
             throw new LogicException(sprintf('Cannot load "%s" for use in integration testing.', $this->_class));
         }
@@ -123,7 +135,9 @@ class MiddlewareDispatcher
         }
 
         $out = Router::url($url);
-        Router::reload();
+        if (!$this->_disableRouterReload) {
+            Router::reload();
+        }
 
         return $out;
     }

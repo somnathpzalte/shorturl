@@ -164,6 +164,16 @@ class Factory
             'data-dir' => self::getDataDir($home),
         )));
 
+        // load global config
+        $file = new JsonFile($config->get('home').'/config.json');
+        if ($file->exists()) {
+            if ($io && $io->isDebug()) {
+                $io->writeError('Loading config file ' . $file->getPath());
+            }
+            $config->merge($file->read());
+        }
+        $config->setConfigSource(new JsonConfigSource($file));
+
         $htaccessProtect = (bool) $config->get('htaccess-protect');
         if ($htaccessProtect) {
             // Protect directory against web access. Since HOME could be
@@ -179,16 +189,6 @@ class Factory
                 }
             }
         }
-
-        // load global config
-        $file = new JsonFile($config->get('home').'/config.json');
-        if ($file->exists()) {
-            if ($io && $io->isDebug()) {
-                $io->writeError('Loading config file ' . $file->getPath());
-            }
-            $config->merge($file->read());
-        }
-        $config->setConfigSource(new JsonConfigSource($file));
 
         // load global auth file
         $file = new JsonFile($config->get('home').'/auth.json');
@@ -347,7 +347,7 @@ class Factory
         // load package
         $parser = new VersionParser;
         $guesser = new VersionGuesser($config, new ProcessExecutor($io), $parser);
-        $loader = new Package\Loader\RootPackageLoader($rm, $config, $parser, $guesser);
+        $loader = new Package\Loader\RootPackageLoader($rm, $config, $parser, $guesser, $io);
         $package = $loader->load($localConfig, 'Composer\Package\RootPackage', $cwd);
         $composer->setPackage($package);
 
@@ -586,9 +586,13 @@ class Factory
     {
         static $warned = false;
         $disableTls = false;
-        if ($config && $config->get('disable-tls') === true) {
+        // allow running the config command if disable-tls is in the arg list, even if openssl is missing, to allow disabling it via the config command
+        if (isset($_SERVER['argv']) && in_array('disable-tls', $_SERVER['argv']) && (in_array('conf', $_SERVER['argv']) || in_array('config', $_SERVER['argv']))) {
+            $warned = true;
+            $disableTls = !extension_loaded('openssl');
+        } elseif ($config && $config->get('disable-tls') === true) {
             if (!$warned) {
-                $io->write('<warning>You are running Composer with SSL/TLS protection disabled.</warning>');
+                $io->writeError('<warning>You are running Composer with SSL/TLS protection disabled.</warning>');
             }
             $warned = true;
             $disableTls = true;

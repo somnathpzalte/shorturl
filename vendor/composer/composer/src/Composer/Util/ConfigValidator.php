@@ -138,6 +138,22 @@ class ConfigValidator
             }
         }
 
+
+        // check for meaningless provide/replace satisfying requirements
+        foreach (array('provide', 'replace') as $linkType) {
+            if (isset($manifest[$linkType])) {
+                foreach (array('require', 'require-dev') as $requireType) {
+                    if (isset($manifest[$requireType])) {
+                        foreach ($manifest[$linkType] as $provide => $constraint) {
+                            if (isset($manifest[$requireType][$provide])) {
+                                $warnings[] = 'The package ' . $provide . ' in '.$requireType.' is also listed in '.$linkType.' which satisfies the requirement. Remove it from '.$linkType.' if you wish to install it.';
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // check for commit references
         $require = isset($manifest['require']) ? $manifest['require'] : array();
         $requireDev = isset($manifest['require-dev']) ? $manifest['require-dev'] : array();
@@ -147,6 +163,18 @@ class ConfigValidator
                 $warnings[] = sprintf(
                     'The package "%s" is pointing to a commit-ref, this is bad practice and can cause unforeseen issues.',
                     $package
+                );
+            }
+        }
+
+        // report scripts-descriptions for non-existent scripts
+        $scriptsDescriptions = isset($manifest['scripts-descriptions']) ? $manifest['scripts-descriptions'] : array();
+        $scripts = isset($manifest['scripts']) ? $manifest['scripts'] : array();
+        foreach ($scriptsDescriptions as $scriptName => $scriptDescription) {
+            if (!array_key_exists($scriptName, $scripts)) {
+                $warnings[] = sprintf(
+                    'Description for non-existent script "%s" found in "scripts-descriptions"',
+                    $scriptName
                 );
             }
         }

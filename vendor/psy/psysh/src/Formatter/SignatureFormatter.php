@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2018 Justin Hileman
+ * (c) 2012-2020 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -20,7 +20,7 @@ use Symfony\Component\Console\Formatter\OutputFormatter;
 /**
  * An abstract representation of a function, class or property signature.
  */
-class SignatureFormatter implements Formatter
+class SignatureFormatter implements ReflectorFormatter
 {
     /**
      * Format a signature for the given reflector.
@@ -56,7 +56,7 @@ class SignatureFormatter implements Formatter
                 return self::formatConstant($reflector);
 
             default:
-                throw new \InvalidArgumentException('Unexpected Reflector class: ' . get_class($reflector));
+                throw new \InvalidArgumentException('Unexpected Reflector class: '.\get_class($reflector));
         }
     }
 
@@ -84,13 +84,13 @@ class SignatureFormatter implements Formatter
         if ($reflector instanceof \ReflectionClass && $reflector->isTrait()) {
             // For some reason, PHP 5.x returns `abstract public` modifiers for
             // traits. Let's just ignore that business entirely.
-            if (version_compare(PHP_VERSION, '7.0.0', '<')) {
-                return [];
+            if (\version_compare(\PHP_VERSION, '7.0.0', '<')) {
+                return '';
             }
         }
 
-        return implode(' ', array_map(function ($modifier) {
-            return sprintf('<keyword>%s</keyword>', $modifier);
+        return \implode(' ', \array_map(function ($modifier) {
+            return \sprintf('<keyword>%s</keyword>', $modifier);
         }, \Reflection::getModifierNames($reflector->getModifiers())));
     }
 
@@ -115,24 +115,24 @@ class SignatureFormatter implements Formatter
             $chunks[] = $reflector->isInterface() ? 'interface' : 'class';
         }
 
-        $chunks[] = sprintf('<class>%s</class>', self::formatName($reflector));
+        $chunks[] = \sprintf('<class>%s</class>', self::formatName($reflector));
 
         if ($parent = $reflector->getParentClass()) {
             $chunks[] = 'extends';
-            $chunks[] = sprintf('<class>%s</class>', $parent->getName());
+            $chunks[] = \sprintf('<class>%s</class>', $parent->getName());
         }
 
         $interfaces = $reflector->getInterfaceNames();
         if (!empty($interfaces)) {
-            sort($interfaces);
+            \sort($interfaces);
 
-            $chunks[] = 'implements';
-            $chunks[] = implode(', ', array_map(function ($name) {
-                return sprintf('<class>%s</class>', $name);
+            $chunks[] = $reflector->isInterface() ? 'extends' : 'implements';
+            $chunks[] = \implode(', ', \array_map(function ($name) {
+                return \sprintf('<class>%s</class>', $name);
             }, $interfaces));
         }
 
-        return implode(' ', $chunks);
+        return \implode(' ', $chunks);
     }
 
     /**
@@ -147,7 +147,7 @@ class SignatureFormatter implements Formatter
         $value = $reflector->getValue();
         $style = self::getTypeStyle($value);
 
-        return sprintf(
+        return \sprintf(
             '<keyword>const</keyword> <const>%s</const> = <%s>%s</%s>',
             self::formatName($reflector),
             $style,
@@ -168,7 +168,7 @@ class SignatureFormatter implements Formatter
         $value = $reflector->getValue();
         $style = self::getTypeStyle($value);
 
-        return sprintf(
+        return \sprintf(
             '<keyword>define</keyword>(<string>%s</string>, <%s>%s</%s>)',
             OutputFormatter::escape(Json::encode($reflector->getName())),
             $style,
@@ -186,11 +186,11 @@ class SignatureFormatter implements Formatter
      */
     private static function getTypeStyle($value)
     {
-        if (is_int($value) || is_float($value)) {
+        if (\is_int($value) || \is_float($value)) {
             return 'number';
-        } elseif (is_string($value)) {
+        } elseif (\is_string($value)) {
             return 'string';
-        } elseif (is_bool($value) || is_null($value)) {
+        } elseif (\is_bool($value) || $value === null) {
             return 'bool';
         } else {
             return 'strong'; // @codeCoverageIgnore
@@ -206,7 +206,7 @@ class SignatureFormatter implements Formatter
      */
     private static function formatProperty(\ReflectionProperty $reflector)
     {
-        return sprintf(
+        return \sprintf(
             '%s <strong>$%s</strong>',
             self::formatModifiers($reflector),
             $reflector->getName()
@@ -222,12 +222,29 @@ class SignatureFormatter implements Formatter
      */
     private static function formatFunction(\ReflectionFunctionAbstract $reflector)
     {
-        return sprintf(
-            '<keyword>function</keyword> %s<function>%s</function>(%s)',
+        return \sprintf(
+            '<keyword>function</keyword> %s<function>%s</function>(%s)%s',
             $reflector->returnsReference() ? '&' : '',
             self::formatName($reflector),
-            implode(', ', self::formatFunctionParams($reflector))
+            \implode(', ', self::formatFunctionParams($reflector)),
+            self::formatFunctionReturnType($reflector)
         );
+    }
+
+    /**
+     * Format a function signature's return type (if available).
+     *
+     * @param \ReflectionFunctionAbstract $reflector
+     *
+     * @return string Formatted return type
+     */
+    private static function formatFunctionReturnType(\ReflectionFunctionAbstract $reflector)
+    {
+        if (!\method_exists($reflector, 'hasReturnType') || !$reflector->hasReturnType()) {
+            return '';
+        }
+
+        return \sprintf(': %s', self::formatReflectionType($reflector->getReturnType()));
     }
 
     /**
@@ -239,7 +256,7 @@ class SignatureFormatter implements Formatter
      */
     private static function formatMethod(\ReflectionMethod $reflector)
     {
-        return sprintf(
+        return \sprintf(
             '%s %s',
             self::formatModifiers($reflector),
             self::formatFunction($reflector)
@@ -259,10 +276,14 @@ class SignatureFormatter implements Formatter
         foreach ($reflector->getParameters() as $param) {
             $hint = '';
             try {
-                if ($param->isArray()) {
-                    $hint = '<keyword>array</keyword> ';
-                } elseif ($class = $param->getClass()) {
-                    $hint = sprintf('<class>%s</class> ', $class->getName());
+                if (\method_exists($param, 'getType')) {
+                    $hint = self::formatReflectionType($param->getType());
+                } else {
+                    if ($param->isArray()) {
+                        $hint = '<keyword>array</keyword>';
+                    } elseif ($class = $param->getClass()) {
+                        $hint = \sprintf('<class>%s</class>', $class->getName());
+                    }
                 }
             } catch (\Exception $e) {
                 // sometimes we just don't know...
@@ -272,37 +293,67 @@ class SignatureFormatter implements Formatter
                 // Hax: we'll try to extract it :P
 
                 // @codeCoverageIgnoreStart
-                $chunks = explode('$' . $param->getName(), (string) $param);
-                $chunks = explode(' ', trim($chunks[0]));
-                $guess  = end($chunks);
+                $chunks = \explode('$'.$param->getName(), (string) $param);
+                $chunks = \explode(' ', \trim($chunks[0]));
+                $guess = \end($chunks);
 
-                $hint = sprintf('<urgent>%s</urgent> ', $guess);
+                $hint = \sprintf('<urgent>%s</urgent>', OutputFormatter::escape($guess));
                 // @codeCoverageIgnoreEnd
             }
 
             if ($param->isOptional()) {
                 if (!$param->isDefaultValueAvailable()) {
-                    $value     = 'unknown';
+                    $value = 'unknown';
                     $typeStyle = 'urgent';
                 } else {
-                    $value     = $param->getDefaultValue();
+                    $value = $param->getDefaultValue();
                     $typeStyle = self::getTypeStyle($value);
-                    $value     = is_array($value) ? 'array()' : is_null($value) ? 'null' : var_export($value, true);
+                    $value = \is_array($value) ? '[]' : ($value === null ? 'null' : \var_export($value, true));
                 }
-                $default = sprintf(' = <%s>%s</%s>', $typeStyle, OutputFormatter::escape($value), $typeStyle);
+                $default = \sprintf(' = <%s>%s</%s>', $typeStyle, OutputFormatter::escape($value), $typeStyle);
             } else {
                 $default = '';
             }
 
-            $params[] = sprintf(
-                '%s%s<strong>$%s</strong>%s',
+            $params[] = \sprintf(
+                '%s%s%s<strong>$%s</strong>%s',
                 $param->isPassedByReference() ? '&' : '',
                 $hint,
+                $hint !== '' ? ' ' : '',
                 $param->getName(),
                 $default
             );
         }
 
         return $params;
+    }
+
+    /**
+     * Print function param or return type(s).
+     *
+     * @param \ReflectionType $type
+     *
+     * @return string
+     */
+    private static function formatReflectionType(\ReflectionType $type = null)
+    {
+        if ($type === null) {
+            return '';
+        }
+
+        $types = $type instanceof \ReflectionUnionType ? $type->getTypes() : [$type];
+        $formattedTypes = [];
+
+        foreach ($types as $type) {
+            $typeStyle = $type->isBuiltin() ? 'keyword' : 'class';
+
+            // PHP 7.0 didn't have `getName` on reflection types, so wheee!
+            $typeName = \method_exists($type, 'getName') ? $type->getName() : (string) $type;
+
+            // @todo Do we want to include the ? for nullable types? Maybe only sometimes?
+            $formattedTypes[] = \sprintf('<%s>%s</%s>', $typeStyle, OutputFormatter::escape($typeName), $typeStyle);
+        }
+
+        return \implode('|', $formattedTypes);
     }
 }

@@ -143,7 +143,9 @@ class Parser
         foreach ($raw_lines as $raw_line) {
             $this->line_num++;
 
-            if ($this->string_helper->startsWith('#', $raw_line) || !$raw_line) {
+            $line = trim($raw_line);
+
+            if ($this->string_helper->startsWith('#', $line) || !$line) {
                 continue;
             }
 
@@ -234,8 +236,11 @@ class Parser
      *
      * @return array The .env contents
      */
-    public function getContent()
+    public function getContent($keyName = null)
     {
+		if (!is_null($keyName)) {
+			return (array_key_exists($keyName, $this->lines)) ? $this->lines[$keyName] : null;
+		}
         return $this->lines;
     }
 }

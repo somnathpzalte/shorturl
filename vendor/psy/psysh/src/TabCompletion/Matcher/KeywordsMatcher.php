@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2018 Justin Hileman
+ * (c) 2012-2020 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -48,7 +48,7 @@ class KeywordsMatcher extends AbstractMatcher
      */
     public function isKeyword($keyword)
     {
-        return in_array($keyword, $this->keywords);
+        return \in_array($keyword, $this->keywords);
     }
 
     /**
@@ -58,7 +58,7 @@ class KeywordsMatcher extends AbstractMatcher
     {
         $input = $this->getInput($tokens);
 
-        return array_filter($this->keywords, function ($keyword) use ($input) {
+        return \array_filter($this->keywords, function ($keyword) use ($input) {
             return AbstractMatcher::startsWith($input, $keyword);
         });
     }
@@ -68,8 +68,8 @@ class KeywordsMatcher extends AbstractMatcher
      */
     public function hasMatched(array $tokens)
     {
-        $token     = array_pop($tokens);
-        $prevToken = array_pop($tokens);
+        $token = \array_pop($tokens);
+        $prevToken = \array_pop($tokens);
 
         switch (true) {
             case self::hasToken([self::T_OPEN_TAG, self::T_VARIABLE], $token):

@@ -46,18 +46,22 @@ class XmlUtils
      */
     public static function parse($content, $schemaOrCallable = null)
     {
-        if (!extension_loaded('dom')) {
+        if (!\extension_loaded('dom')) {
             throw new \RuntimeException('Extension DOM is required.');
         }
 
         $internalErrors = libxml_use_internal_errors(true);
-        $disableEntities = libxml_disable_entity_loader(true);
+        if (\LIBXML_VERSION < 20900) {
+            $disableEntities = libxml_disable_entity_loader(true);
+        }
         libxml_clear_errors();
 
         $dom = new \DOMDocument();
         $dom->validateOnParse = true;
-        if (!$dom->loadXML($content, LIBXML_NONET | (defined('LIBXML_COMPACT') ? LIBXML_COMPACT : 0))) {
-            libxml_disable_entity_loader($disableEntities);
+        if (!$dom->loadXML($content, \LIBXML_NONET | (\defined('LIBXML_COMPACT') ? \LIBXML_COMPACT : 0))) {
+            if (\LIBXML_VERSION < 20900) {
+                libxml_disable_entity_loader($disableEntities);
+            }
 
             throw new XmlParsingException(implode("\n", static::getXmlErrors($internalErrors)));
         }
@@ -65,10 +69,12 @@ class XmlUtils
         $dom->normalizeDocument();
 
         libxml_use_internal_errors($internalErrors);
-        libxml_disable_entity_loader($disableEntities);
+        if (\LIBXML_VERSION < 20900) {
+            libxml_disable_entity_loader($disableEntities);
+        }
 
         foreach ($dom->childNodes as $child) {
-            if (XML_DOCUMENT_TYPE_NODE === $child->nodeType) {
+            if (\XML_DOCUMENT_TYPE_NODE === $child->nodeType) {
                 throw new XmlParsingException('Document types are not allowed.');
             }
         }
@@ -78,13 +84,13 @@ class XmlUtils
             libxml_clear_errors();
 
             $e = null;
-            if (is_callable($schemaOrCallable)) {
+            if (\is_callable($schemaOrCallable)) {
                 try {
-                    $valid = call_user_func($schemaOrCallable, $dom, $internalErrors);
+                    $valid = \call_user_func($schemaOrCallable, $dom, $internalErrors);
                 } catch (\Exception $e) {
                     $valid = false;
                 }
-            } elseif (!is_array($schemaOrCallable) && is_file((string) $schemaOrCallable)) {
+            } elseif (!\is_array($schemaOrCallable) && is_file((string) $schemaOrCallable)) {
                 $schemaSource = file_get_contents((string) $schemaOrCallable);
                 $valid = @$dom->schemaValidateSource($schemaSource);
             } else {
@@ -122,9 +128,18 @@ class XmlUtils
      */
     public static function loadFile($file, $schemaOrCallable = null)
     {
+        if (!is_file($file)) {
+            throw new \InvalidArgumentException(sprintf('Resource "%s" is not a file.', $file));
+        }
+
+        if (!is_readable($file)) {
+            throw new \InvalidArgumentException(sprintf('File "%s" is not readable.', $file));
+        }
+
         $content = @file_get_contents($file);
+
         if ('' === trim($content)) {
-            throw new \InvalidArgumentException(sprintf('File %s does not contain valid XML, it is empty.', $file));
+            throw new \InvalidArgumentException(sprintf('File "%s" does not contain valid XML, it is empty.', $file));
         }
 
         try {
@@ -152,15 +167,15 @@ class XmlUtils
      * @param \DOMElement $element     A \DOMElement instance
      * @param bool        $checkPrefix Check prefix in an element or an attribute name
      *
-     * @return array A PHP array
+     * @return mixed
      */
     public static function convertDomElementToArray(\DOMElement $element, $checkPrefix = true)
     {
         $prefix = (string) $element->prefix;
         $empty = true;
-        $config = array();
+        $config = [];
         foreach ($element->attributes as $name => $node) {
-            if ($checkPrefix && !in_array((string) $node->prefix, array('', $prefix), true)) {
+            if ($checkPrefix && !\in_array((string) $node->prefix, ['', $prefix], true)) {
                 continue;
             }
             $config[$name] = static::phpize($node->value);
@@ -181,8 +196,8 @@ class XmlUtils
 
                 $key = $node->localName;
                 if (isset($config[$key])) {
-                    if (!is_array($config[$key]) || !is_int(key($config[$key]))) {
-                        $config[$key] = array($config[$key]);
+                    if (!\is_array($config[$key]) || !\is_int(key($config[$key]))) {
+                        $config[$key] = [$config[$key]];
                     }
                     $config[$key][] = $value;
                 } else {
@@ -195,7 +210,7 @@ class XmlUtils
 
         if (false !== $nodeValue) {
             $value = static::phpize($nodeValue);
-            if (count($config)) {
+            if (\count($config)) {
                 $config['value'] = $value;
             } else {
                 $config = $value;
@@ -219,7 +234,7 @@ class XmlUtils
 
         switch (true) {
             case 'null' === $lowercaseValue:
-                return;
+                return null;
             case ctype_digit($value):
                 $raw = $value;
                 $cast = (int) $value;
@@ -234,13 +249,13 @@ class XmlUtils
                 return true;
             case 'false' === $lowercaseValue:
                 return false;
-            case isset($value[1]) && '0b' == $value[0].$value[1]:
+            case isset($value[1]) && '0b' == $value[0].$value[1] && preg_match('/^0b[01]*$/', $value):
                 return bindec($value);
             case is_numeric($value):
                 return '0x' === $value[0].$value[1] ? hexdec($value) : (float) $value;
             case preg_match('/^0x[0-9a-f]++$/i', $value):
                 return hexdec($value);
-            case preg_match('/^(-|\+)?[0-9]+(\.[0-9]+)?$/', $value):
+            case preg_match('/^[+-]?[0-9]+(\.[0-9]+)?$/', $value):
                 return (float) $value;
             default:
                 return $value;
@@ -249,10 +264,10 @@ class XmlUtils
 
     protected static function getXmlErrors($internalErrors)
     {
-        $errors = array();
+        $errors = [];
         foreach (libxml_get_errors() as $error) {
             $errors[] = sprintf('[%s %s] %s (in %s - line %d, column %d)',
-                LIBXML_ERR_WARNING == $error->level ? 'WARNING' : 'ERROR',
+                \LIBXML_ERR_WARNING == $error->level ? 'WARNING' : 'ERROR',
                 $error->code,
                 trim($error->message),
                 $error->file ?: 'n/a',

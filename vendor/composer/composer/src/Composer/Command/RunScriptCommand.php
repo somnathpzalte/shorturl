@@ -48,6 +48,7 @@ class RunScriptCommand extends BaseCommand
     {
         $this
             ->setName('run-script')
+            ->setAliases(array('run'))
             ->setDescription('Runs the scripts defined in composer.json.')
             ->setDefinition(array(
                 new InputArgument('script', InputArgument::OPTIONAL, 'Script name to run.'),
@@ -57,10 +58,13 @@ class RunScriptCommand extends BaseCommand
                 new InputOption('no-dev', null, InputOption::VALUE_NONE, 'Disables the dev mode.'),
                 new InputOption('list', 'l', InputOption::VALUE_NONE, 'List scripts.'),
             ))
-            ->setHelp(<<<EOT
+            ->setHelp(
+                <<<EOT
 The <info>run-script</info> command runs scripts defined in composer.json:
 
 <info>php composer.phar run-script post-update-cmd</info>
+
+Read more at https://getcomposer.org/doc/03-cli.md#run-script
 EOT
             )
         ;
@@ -128,8 +132,13 @@ EOT
 
         $renderer = new Table($output);
         $renderer->setStyle('compact');
-        $renderer->getStyle()->setVerticalBorderChar('');
-        $renderer->getStyle()->setCellRowContentFormat('%s  ');
+        $rendererStyle = $renderer->getStyle();
+        if (method_exists($rendererStyle, 'setVerticalBorderChars')) {
+            $rendererStyle->setVerticalBorderChars('');
+        } else {
+            $rendererStyle->setVerticalBorderChar('');
+        }
+        $rendererStyle->setCellRowContentFormat('%s  ');
         $renderer->setRows($table)->render();
 
         return 0;

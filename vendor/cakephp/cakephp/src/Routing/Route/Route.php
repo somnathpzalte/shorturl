@@ -14,7 +14,6 @@
  */
 namespace Cake\Routing\Route;
 
-use Cake\Http\ServerRequest;
 use Cake\Http\ServerRequestFactory;
 use Cake\Routing\Router;
 use InvalidArgumentException;
@@ -255,7 +254,7 @@ class Route
     /**
      * Set the names of parameters that will persisted automatically
      *
-     * Persistent parametesr allow you to define which route parameters should be automatically
+     * Persistent parameters allow you to define which route parameters should be automatically
      * included when generating new URLs. You can override persistent parameters
      * by redefining them in a URL or remove them by setting the persistent parameter to `false`.
      *
@@ -743,7 +742,7 @@ class Route
         // check patterns for routed params
         if (!empty($this->options)) {
             foreach ($this->options as $key => $pattern) {
-                if (isset($url[$key]) && !preg_match('#^' . $pattern . '$#', $url[$key])) {
+                if (isset($url[$key]) && !preg_match('#^' . $pattern . '$#u', $url[$key])) {
                     return false;
                 }
             }
@@ -865,6 +864,10 @@ class Route
     {
         $routeKey = strpos($this->template, ':');
         if ($routeKey !== false) {
+            return substr($this->template, 0, $routeKey);
+        }
+        $routeKey = strpos($this->template, '{');
+        if ($routeKey !== false && strpos($this->template, '}') !== false) {
             return substr($this->template, 0, $routeKey);
         }
         $star = strpos($this->template, '*');
